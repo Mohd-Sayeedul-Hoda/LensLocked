@@ -1,14 +1,16 @@
 package controllers
 
 import (
-	"fmt"
-	"net/http"
+  "fmt"
+  "net/http"
 
-	"lenslocked.com/views"
+  "lenslocked.com/models"
+  "lenslocked.com/views"
 )
 
 type Users struct{
   NewView *views.View
+  us *models.UserService
 }
 
 type SingupForm struct{
