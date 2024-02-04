@@ -19,9 +19,10 @@ type SingupForm struct{
   Password string `schema:"password"`
 }
 
-func NewUser() *Users{
+func NewUser(us *models.UserService) *Users{
   return &Users{
    NewView: views.NewView("bootstrap", "users/new"),
+   us: us,
   }
 }
 
@@ -37,9 +38,17 @@ func(u *Users) Create(w http.ResponseWriter, r *http.Request){
   if err := parseForm(r, &form); err != nil{
     panic(err)
   }
-  fmt.Fprintln(w, "Email is", form.Name)
-  fmt.Fprintln(w, "Email is", form.Email)
-  fmt.Fprintln(w, "Password is", form.Password)
+  user := models.User{
+    Name: form.Name,
+    Email: form.Email,
+    Password: form.Password,
+  }
+  err := u.us.Create(&user)
+  if err != nil{
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+  }
 
+  fmt.Fprintln(w, "User name is ", user.Name)
+  fmt.Fprintln(w, "User email is ", user.Email)
 }
 

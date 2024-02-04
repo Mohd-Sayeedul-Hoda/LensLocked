@@ -16,7 +16,7 @@ import (
 var _ = godotenv.Load(".env")
 
 var (
-	connectionString = fmt.Sprintf("host=%s port=%s	  user=%s password=%s dbname=%s sslmode=disable",
+	connectionString = fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 	      os.Getenv("host"),
 	      os.Getenv("port"),
 	      os.Getenv("user"),
@@ -32,7 +32,6 @@ var(
 
 func main(){
   // I deeply beleive more you fuck around more you found out 
-  fmt.Println(connectionString)
   us, err := models.NewUserService(connectionString)
   if err != nil{
     panic(err)
@@ -42,7 +41,7 @@ func main(){
   us.AutoMigrate()
 
   staticC := controllers.NewStatic()
-  userC := controllers.NewUser()
+  userC := controllers.NewUser(us)
 
   r := mux.NewRouter()
   r.HandleFunc("/", staticC.Home.ServeHTTP).Methods("GET")

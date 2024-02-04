@@ -1,10 +1,12 @@
 package models
 
-import(
-  "errors"
+import (
+	"errors"
+	"fmt"
 
- "github.com/jinzhu/gorm"
-  _ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var(
@@ -12,10 +14,14 @@ var(
   ErrInvalidID = errors.New("models: ID provided was invalid")
 )
 
+var userPwPepper = "secret-random-string"
+
 type User struct{
   gorm.Model
   Name string 
-  Email string
+  Email string `gorm:"not null;unique_index"`
+  Password string `gorm:"-"`
+  PasswordHash string `gorm:"not noll"`
 }
  
 type UserService struct{
@@ -38,7 +44,7 @@ func(us *UserService) Close() error{
 }
 
 func (us *UserService) AutoMigrate() error{
-  if err := us.db.AutoMigrate().Error; err != nil{
+  if err := us.db.AutoMigrate(&User{}).Error; err != nil{
     return err
   }
   return nil
@@ -53,6 +59,15 @@ func (us *UserService) DestructiveReset() error{
 }
 
 func (us *UserService) Create(user *User) error{
+  hashedBytes, err := bcrypt.GenerateFromPassword(
+    []byte(user.Password + userPwPepper), bcrypt.DefaultCost)
+  if err != nil{
+    return err
+  }
+  user.PasswordHash = string(hashedBytes)
+  fmt.Println(user.PasswordHash)
+  user.Password = ""
+    
   return us.db.Create(user).Error
 }
 
