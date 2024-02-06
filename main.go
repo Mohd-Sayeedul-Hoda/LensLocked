@@ -8,6 +8,8 @@ import (
   "lenslocked.com/controllers"
   "lenslocked.com/views"
   "lenslocked.com/models"
+  //"lenslocked.com/rand"
+  //"lenslocked.com/hash"
 
   "github.com/gorilla/mux"
   "github.com/joho/godotenv"
@@ -32,6 +34,7 @@ var(
 
 func main(){
   // I deeply beleive more you fuck around more you found out 
+
   us, err := models.NewUserService(connectionString)
   if err != nil{
     panic(err)
@@ -47,8 +50,10 @@ func main(){
   r.HandleFunc("/", staticC.Home.ServeHTTP).Methods("GET")
   r.HandleFunc("/contact", staticC.Contact.ServeHTTP).Methods("GET")
   r.HandleFunc("/faq", staticC.Faq.ServeHTTP).Methods("GET")
-  r.HandleFunc("/signup", userC.New).Methods("GET")
+  r.HandleFunc("/signup", userC.NewView.ServeHTTP).Methods("GET")
   r.HandleFunc("/signup", userC.Create).Methods("POST")
+  r.HandleFunc("/login", userC.LoginView.ServeHTTP).Methods("GET")
+  r.HandleFunc("/login", userC.Login).Methods("POST")
   http.ListenAndServe(":3000", r)
 }
 
