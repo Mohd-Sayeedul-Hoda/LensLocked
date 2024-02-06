@@ -1,11 +1,12 @@
 package controllers
 
 import (
-  "fmt"
-  "net/http"
+	"fmt"
+	"net/http"
 
-  "lenslocked.com/models"
-  "lenslocked.com/views"
+	"lenslocked.com/models"
+	"lenslocked.com/rand"
+	"lenslocked.com/views"
 )
 
 type Users struct{
@@ -55,8 +56,12 @@ func(u *Users) Create(w http.ResponseWriter, r *http.Request){
     http.Error(w, err.Error(), http.StatusInternalServerError)
   }
 
-  fmt.Fprintln(w, "User name is ", user.Name)
-  fmt.Fprintln(w, "User email is ", user.Email)
+  err = u.signIn(w, &user)
+  if err != nil{
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  http.Redirect(w, r, "/cookietest", http.StatusFound)
 }
 
 func (u *Users) Login(w http.ResponseWriter, r *http.Request){
@@ -65,8 +70,6 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request){
   if err != nil{
     panic(err)
   }
-  fmt.Println(form.Email)
-  fmt.Println(form.Password)
   user, err := u.us.Authenticate(form.Email, form.Password)
   if err != nil{
   switch err{
@@ -81,10 +84,44 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request){
 }
     return 
   }
+  err = u.signIn(w, user)
+  if err != nil{
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+  }
+  http.Redirect(w, r, "/cookietest", http.StatusFound)
+}
+
+func (u *Users) signIn(w http.ResponseWriter, user *models.User) error{
+
+  if user.Remember == ""{
+    token, err := rand.RememberToken()
+    if err != nil{
+      return err
+    }
+    user.Remember = token
+    err = u.us.Update(user)
+    if err != nil{
+      return err
+    }
+  }
   cookie := http.Cookie{
-    Name: "email",
-    Value: user.Email,
+    Name: "remember_token",
+    Value: user.Remember,
+    HttpOnly: true,
   }
   http.SetCookie(w, &cookie)
+  return nil
+}
+
+func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request){
+  cookie, err := r.Cookie("remember_token")
+  if err != nil{
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+    return
+  }
+  user, err := u.us.ByRemember(cookie.Value)
+  if err != nil{
+    http.Error(w, err.Error(), http.StatusInternalServerError)
+  }
   fmt.Fprintln(w, user)
 }

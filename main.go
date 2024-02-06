@@ -47,6 +47,7 @@ func main(){
   userC := controllers.NewUser(us)
 
   r := mux.NewRouter()
+  r.HandleFunc("/cookietest", userC.CookieTest)
   r.HandleFunc("/", staticC.Home.ServeHTTP).Methods("GET")
   r.HandleFunc("/contact", staticC.Contact.ServeHTTP).Methods("GET")
   r.HandleFunc("/faq", staticC.Faq.ServeHTTP).Methods("GET")
