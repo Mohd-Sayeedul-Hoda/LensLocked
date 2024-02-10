@@ -2,7 +2,7 @@ package models
 
 import (
   "errors"
-  "fmt"
+  //"fmt"
 
   "lenslocked.com/rand"
   "lenslocked.com/hash"
@@ -35,7 +35,6 @@ type User struct{
 // and implement the UserDB interface fully.
 type userGorm struct{
   db *gorm.DB
-  hmac hash.HMAC
 }
 
 // UserService is a set of methods used to manipulat
@@ -99,10 +98,8 @@ func newUserGorm(connectinInfo string)(*userGorm, error){
     return nil, err
   } 
   db.LogMode(true)
-  hmac := hash.NewHmac(hmacSecretKey)
   return &userGorm{
     db: db,
-    hmac: hmac,
   }, nil
 }
  
@@ -126,25 +123,6 @@ func (us *userGorm) DestructiveReset() error{
 }
 
 func (us *userGorm) Create(user *User) error{
-  hashedBytes, err := bcrypt.GenerateFromPassword(
-    []byte(user.Password + userPwPepper), bcrypt.DefaultCost)
-  if err != nil{
-    return err
-  }
-  user.PasswordHash = string(hashedBytes)
-  fmt.Println(user.PasswordHash)
-  user.Password = ""
-
-  if user.Remember == ""{
-    token, err := rand.RememberToken()
-    if err != nil{
-      return err
-    }
-    user.Remember = token
-  }
-  // TODO: Hash the token and set it on user.RemeberHash
-  user.RememberHash = us.hmac.Hash(user.Remember)
-    
   return us.db.Create(user).Error
 }
 
@@ -176,16 +154,10 @@ func (us *userGorm) ByEmail(email string) (*User, error){
 }
 
 func (us *userGorm) Update(user *User) error {
-  if user.Remember != "" {
-    user.RememberHash = us.hmac.Hash(user.Remember)
-  }
   return us.db.Save(user).Error
 }
 
 func (us *userGorm) Delete(id uint) error {
-  if id == 0 {
-    return ErrInvalidID
-  }
   user := User{Model: gorm.Model{ID: id}}
   return us.db.Delete(&user).Error
 }
@@ -218,7 +190,104 @@ func (us *userService) Authenticate(email, password string) (*User, error){
 }
 
 func (uv *userValidator) ByRemember(token string) (*User, error){
-  rememberHash := uv.hmac.Hash(token)
 
-  return uv.UserDB.ByRemember(rememberHash)
+  user := User{
+    Remember: token,
+  }
+  err := runUserValFns(&user, uv.hmacRemember)
+  if err != nil{
+    return nil, err
+  }
+
+  return uv.UserDB.ByRemember(user.RememberHash)
+}
+
+func (uv *userValidator) Create(user *User) error{
+
+  err := runUserValFns(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember)
+  if err != nil{
+    return err
+  }
+
+  return uv.UserDB.Create(user)
+}
+
+func (uv *userValidator) Update(user *User) error{
+  
+  err := runUserValFns(user, uv.bcryptPassword, uv.hmacRemember)
+  if err != nil{
+    return err
+  }
+
+  return uv.UserDB.Update(user)
+}
+
+func (uv *userValidator) Delete(id uint) error {
+  var user User
+  user.ID = id
+  err := runUserValFns(&user, uv.idGreaterThan(0))
+  if err != nil{
+    return err
+  }
+  return uv.UserDB.Delete(id)
+}
+
+// bcryptPassword will hash a user's password with 
+// an app-wide pepper bcrypt, which salts for us.
+
+func (uv *userValidator) bcryptPassword(user *User) error{
+  
+  if user.Password == ""{
+    return nil
+  }
+
+  pwBytes := []byte(user.Password+userPwPepper)
+  hashedBytes, err := bcrypt.GenerateFromPassword(pwBytes,bcrypt.DefaultCost)
+  if err != nil{
+    return err
+  }
+  user.PasswordHash = string(hashedBytes)
+  user.Password = ""
+  return nil
+}
+
+type userValFn func(*User) error
+
+func runUserValFns(user *User, fns ...userValFn)error{
+  for _, fn := range fns{
+    err := fn(user)
+    if err != nil{
+      return err
+    }
+  }
+  return nil
+}
+
+func (uv *userValidator) hmacRemember(user *User) error{
+  if user.Remember == "" {
+    return nil
+  }
+  user.RememberHash = uv.hmac.Hash(user.Remember)
+  return nil
+}
+
+func (uv *userValidator) setRememberIfUnset(user *User) error{
+  if user.Remember != ""{
+    return nil
+  }
+  token, err := rand.RememberToken()
+  if err != nil{
+    return err
+  }
+  user.Remember = token
+  return nil
+}
+
+func (uv *userValidator) idGreaterThan(n uint) userValFn{
+  return userValFn(func(user *User) error{
+    if user.ID <= n {
+      return ErrInvalidID
+    }
+    return nil
+  })
 }
