@@ -326,12 +326,11 @@ func (uv *userValidator) requireEmail(user *User) error{
 }
 
 func (uv *userValidator) emailFormat(user *User) error{
-  if user.Email != ""{
+  if user.Email == ""{
     return nil
   }
-  if uv.emailRegex.MatchString(user.Email) {
-    return nil
-  } else {
+  if !uv.emailRegex.MatchString(user.Email) {
     return ErrEmailInvalid
   }
+  return nil
 }
