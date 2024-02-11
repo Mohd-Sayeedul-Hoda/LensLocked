@@ -2,6 +2,8 @@ package models
 
 import (
   "errors"
+  "strings"
+  "regexp"
   //"fmt"
 
   "lenslocked.com/rand"
@@ -16,6 +18,8 @@ var(
   ErrNotFound = errors.New("models: resource not found")
   ErrInvalidID = errors.New("models: ID provided was invalid")
   ErrInvalidPassword = errors.New("models: incorrect password provided")
+  ErrEmailRequired = errors.New("models: email address is require")
+  ErrEmailInvalid = errors.New("models: email address is not valid")
 )
 
 var userPwPepper = "secret-random-string"
@@ -51,6 +55,7 @@ type userService struct {
 type userValidator struct{
   UserDB
   hmac hash.HMAC
+  emailRegex *regexp.Regexp
 }
 
 // Move to top after working
@@ -82,15 +87,19 @@ func NewUserService(connection string) (UserService, error){
     return nil, err
   }
   hmac := hash.NewHmac(hmacSecretKey)
-  uv := &userValidator{
-    hmac: hmac,
-    UserDB: ug,
-  }
+  uv := newUserValidator(ug, hmac)
   return &userService{
     UserDB: uv,
   }, nil
 }
 
+func newUserValidator(udb UserDB, hmac hash.HMAC) *userValidator{
+  return &userValidator{
+    UserDB: udb,
+    hmac: hmac,
+    emailRegex: regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`),
+  }
+}
  
 func newUserGorm(connectinInfo string)(*userGorm, error){
   db, err := gorm.Open("postgres", connectinInfo)
@@ -204,7 +213,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error){
 
 func (uv *userValidator) Create(user *User) error{
 
-  err := runUserValFns(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember)
+  err := runUserValFns(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
   if err != nil{
     return err
   }
@@ -214,7 +223,7 @@ func (uv *userValidator) Create(user *User) error{
 
 func (uv *userValidator) Update(user *User) error{
   
-  err := runUserValFns(user, uv.bcryptPassword, uv.hmacRemember)
+  err := runUserValFns(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
   if err != nil{
     return err
   }
@@ -230,6 +239,17 @@ func (uv *userValidator) Delete(id uint) error {
     return err
   }
   return uv.UserDB.Delete(id)
+}
+
+func (uv *userValidator) ByEmail(email string) (*User, error){
+  user := User{
+    Email: email,
+  }
+  err := runUserValFns(&user, uv.normalizeEmail)
+  if err != nil{
+    return nil, err
+  }
+  return uv.UserDB.ByEmail(user.Email)
 }
 
 // bcryptPassword will hash a user's password with 
@@ -290,4 +310,28 @@ func (uv *userValidator) idGreaterThan(n uint) userValFn{
     }
     return nil
   })
+}
+ 
+func (uv *userValidator) normalizeEmail(user *User) error{
+  user.Email = strings.ToLower(user.Email)
+  user.Email = strings.TrimSpace(user.Email)
+  return nil
+}
+
+func (uv *userValidator) requireEmail(user *User) error{
+  if user.Email == ""{
+    return ErrEmailRequired
+  }
+  return nil
+}
+
+func (uv *userValidator) emailFormat(user *User) error{
+  if user.Email != ""{
+    return nil
+  }
+  if uv.emailRegex.MatchString(user.Email) {
+    return nil
+  } else {
+    return ErrEmailInvalid
+  }
 }
