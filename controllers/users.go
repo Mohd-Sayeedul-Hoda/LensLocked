@@ -34,11 +34,6 @@ func NewUser(us models.UserService) *Users{
   }
 }
 
-func (u *Users) New(w http.ResponseWriter, r *http.Request){
-  if err := u.NewView.Render(w, nil); err !=nil {
-    panic(err)
-  }
-}
 
 func(u *Users) Create(w http.ResponseWriter, r *http.Request){
   var form SingupForm
@@ -125,3 +120,4 @@ func (u *Users) CookieTest(w http.ResponseWriter, r *http.Request){
   }
   fmt.Fprintln(w, user)
 }
+
