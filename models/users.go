@@ -21,6 +21,8 @@ var(
   ErrEmailRequired = errors.New("models: email address is require")
   ErrEmailInvalid = errors.New("models: email address is not valid")
   ErrEmailTaken = errors.New("models: email address is already taken")
+  ErrPasswordTooShort = errors.New("models: password must "+ "be at leat 8 characters long")
+  ErrPasswordRequire = errors.New("models: password is require")
 )
 
 var userPwPepper = "secret-random-string"
@@ -214,7 +216,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error){
 
 func (uv *userValidator) Create(user *User) error{
 
-  err := runUserValFns(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvail)
+  err := runUserValFns(user,uv.passwordRequire, uv.passwordMinLenght , uv.bcryptPassword, uv.passwordHashRequire, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvail)
   if err != nil{
     return err
   }
@@ -224,7 +226,7 @@ func (uv *userValidator) Create(user *User) error{
 
 func (uv *userValidator) Update(user *User) error{
   
-  err := runUserValFns(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvail)
+  err := runUserValFns(user,uv.passwordMinLenght, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvail)
   if err != nil{
     return err
   }
@@ -347,8 +349,33 @@ func (uv *userValidator) emailIsAvail(user *User) error{
   if err != nil{
     return err
   }
+
   if user.ID != existing.ID{
     return ErrEmailTaken
+  }
+  return nil
+}
+
+func (uv *userValidator) passwordMinLenght(user *User) error{
+  if user.Password == "" {
+    return nil
+  }
+  if len(user.Password) < 8{
+    return ErrPasswordTooShort
+  }
+  return nil
+}
+
+func (uv *userValidator) passwordRequire(user *User)error{
+  if user.Password == ""{
+    return ErrPasswordRequire 
+  }
+  return nil
+}
+
+func (uv *userValidator) passwordHashRequire(user *User)error{
+  if user.PasswordHash == ""{
+    return ErrPasswordRequire
   }
   return nil
 }
