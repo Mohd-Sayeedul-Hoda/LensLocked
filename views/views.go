@@ -57,16 +57,17 @@ func (v *View) Render(w http.ResponseWriter, data interface{})error{
 
 
 func (v *View) ServeHTTP(w http.ResponseWriter, r *http.Request){
-  type Alert struct{
-    Level string
-    Message string
-  }
   alert := Alert{
-    Level: "success",
-    Message: "Successfully rendered a dynamic alert!",
+    Level : AlertLvlSuccess,
+    Message : "success rendered a dynamic alert!",
   }
 
-  if err := v.Render(w, alert); err != nil{
+  data := Data{
+    Alert: &alert,
+    Yield: "this can be any data",
+  }
+
+  if err := v.Render(w, data); err != nil{
     panic(err)
   }
 }
