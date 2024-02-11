@@ -20,6 +20,7 @@ var(
   ErrInvalidPassword = errors.New("models: incorrect password provided")
   ErrEmailRequired = errors.New("models: email address is require")
   ErrEmailInvalid = errors.New("models: email address is not valid")
+  ErrEmailTaken = errors.New("models: email address is already taken")
 )
 
 var userPwPepper = "secret-random-string"
@@ -213,7 +214,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error){
 
 func (uv *userValidator) Create(user *User) error{
 
-  err := runUserValFns(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
+  err := runUserValFns(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvail)
   if err != nil{
     return err
   }
@@ -223,7 +224,7 @@ func (uv *userValidator) Create(user *User) error{
 
 func (uv *userValidator) Update(user *User) error{
   
-  err := runUserValFns(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat)
+  err := runUserValFns(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail, uv.requireEmail, uv.emailFormat, uv.emailIsAvail)
   if err != nil{
     return err
   }
@@ -331,6 +332,23 @@ func (uv *userValidator) emailFormat(user *User) error{
   }
   if !uv.emailRegex.MatchString(user.Email) {
     return ErrEmailInvalid
+  }
+  return nil
+}
+
+func (uv *userValidator) emailIsAvail(user *User) error{
+  existing, err := uv.ByEmail(user.Email)
+  if err == ErrNotFound{
+    return nil
+  }
+  // we can't continue our validaton without a 
+  // successful query, so when we get error we say 
+  // can't query email for internal err
+  if err != nil{
+    return err
+  }
+  if user.ID != existing.ID{
+    return ErrEmailTaken
   }
   return nil
 }
