@@ -1,34 +1,39 @@
 package models
 
 import (
-  "errors"
-  "strings"
-  "regexp"
-  //"fmt"
+	//"errors"
+	"regexp"
+	"strings"
 
-  "lenslocked.com/rand"
-  "lenslocked.com/hash"
+	//"fmt"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
-  "github.com/jinzhu/gorm"
-  _ "github.com/jinzhu/gorm/dialects/postgres"
-  "golang.org/x/crypto/bcrypt"
+	"lenslocked.com/hash"
+	"lenslocked.com/rand"
+
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var(
-  ErrNotFound = errors.New("models: resource not found")
-  ErrIDInvalid = errors.New("models: ID provided was invalid")
-  ErrPasswordIncorrect = errors.New("models: incorrect password provided")
-  ErrEmailRequired = errors.New("models: email address is require")
-  ErrEmailInvalid = errors.New("models: email address is not valid")
-  ErrEmailTaken = errors.New("models: email address is already taken")
-  ErrPasswordTooShort = errors.New("models: password must be at leat 8 characters long")
-  ErrPasswordRequire = errors.New("models: password is require")
-  ErrRememberRequire = errors.New("models: remember token is required")
-  ErrRememberTooShort = errors.New("models: remember token must be at least 32 bytes")
+  ErrNotFound modelError = "models: resource not found"
+  ErrIDInvalid modelError = "models: ID provided was invalid"
+  ErrPasswordIncorrect modelError = "models: incorrect password provided"
+  ErrEmailRequired modelError = "models: email address is require"
+  ErrEmailInvalid modelError = "models: email address is not valid"
+  ErrEmailTaken modelError = "models: email address is already taken"
+  ErrPasswordTooShort modelError = "models: password must be at leat 8 characters long"
+  ErrPasswordRequire modelError = "models: password is require"
+  ErrRememberRequire modelError = "models: remember token is required"
+  ErrRememberTooShort modelError = "models: remember token must be at least 32 bytes"
 )
 
 var userPwPepper = "secret-random-string"
 const hmacSecretKey = "secret-hmac-key"
+
+type modelError string
 
 type User struct{
   gorm.Model
@@ -83,8 +88,18 @@ type UserDB interface{
   DestructiveReset() error
 }
 
-var _ UserDB = &userGorm{}
-var _ UserService = &userService{}
+func (e modelError) Error() string{
+  return string(e)
+}
+
+func (e modelError) Public() string{
+  s := strings.Replace(string(e), "models: ", "", 1)
+  split := strings.Split(s, " ")
+  tc := cases.Title(language.English)
+  split[0] = tc.String(split[0])
+  return strings.Join(split, " ")
+}
+
 
 func NewUserService(connection string) (UserService, error){
   ug, err := newUserGorm(connection)
