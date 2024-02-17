@@ -35,16 +35,16 @@ var(
 func main(){
   // I deeply beleive more you fuck around more you found out 
 
-  us, err := models.NewUserService(connectionString)
+  services, err := models.NewServices(connectionString)
   if err != nil{
     panic(err)
   } 
 
-  defer us.Close()
-  us.AutoMigrate()
+  defer services.User.Close()
+  services.User.AutoMigrate()
 
   staticC := controllers.NewStatic()
-  userC := controllers.NewUser(us)
+  userC := controllers.NewUser(services.User)
 
   r := mux.NewRouter()
   r.HandleFunc("/cookietest", userC.CookieTest)
