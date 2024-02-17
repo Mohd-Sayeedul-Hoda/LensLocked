@@ -40,8 +40,8 @@ func main(){
     panic(err)
   } 
 
-  defer services.User.Close()
-  services.User.AutoMigrate()
+  defer services.Close()
+  services.AutoMigrate()
 
   staticC := controllers.NewStatic()
   userC := controllers.NewUser(services.User)

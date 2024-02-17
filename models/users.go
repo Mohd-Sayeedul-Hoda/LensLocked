@@ -80,12 +80,6 @@ type UserDB interface{
   Update(user *User) error
   Delete(id uint) error
 
-  // Used to close db connection
-  Close() error
-
-  // Migrate helpers
-  AutoMigrate() error
-  DestructiveReset() error
 }
 
 func (e modelError) Error() string{
@@ -118,26 +112,6 @@ func newUserValidator(udb UserDB, hmac hash.HMAC) *userValidator{
   }
 }
  
- 
-func(us *userGorm) Close() error{
-  return us.db.Close()
-}
-
-func (us *userGorm) AutoMigrate() error{
-  if err := us.db.AutoMigrate(&User{}).Error; err != nil{
-    return err
-  }
-  return nil
-}
-
-func (us *userGorm) DestructiveReset() error{
-  err := us.db.DropTableIfExists(&User{}).Error
-  if err != nil{
-    return err
-  }
-  return us.AutoMigrate()
-}
-
 func (us *userGorm) Create(user *User) error{
   return us.db.Create(user).Error
 }
