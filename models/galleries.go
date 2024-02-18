@@ -1,6 +1,8 @@
 package models
 
-import "github.com/jinzhu/gorm"
+import (
+	"github.com/jinzhu/gorm"
+)
 
 type Gallery struct{
   gorm.Model
@@ -32,10 +34,6 @@ var _ GalleryDB = &galleryGorm{}
 
 type galleryValFn func(*Gallery)error
 
-func (gg *galleryGorm) Create(gallery *Gallery) error{
-  return gg.db.Create(gallery).Error
-}
-
 const(
   ErrUserIDRequired modelError = "models: user ID is required"
   ErrTitleRequire modelError = "models: title is required"
@@ -51,7 +49,20 @@ func NewGalleryService(db *gorm.DB) GalleryService{
   }
 }
 
-func renGalleryValFns(gallery *Gallery, fns ...galleryValFn) error{
+func (gg *galleryGorm) Create(gallery *Gallery) error{
+  return gg.db.Create(gallery).Error
+}
+
+func (gv *galleryValidator) Create(gallery *Gallery) error{
+  err := runGalleryValFns(gallery, gv.userIDRequired, gv.titleRequired)
+  if err != nil{
+    return err
+  }
+  return gv.GalleryDB.Create(gallery)
+}
+
+
+func runGalleryValFns(gallery *Gallery, fns ...galleryValFn) error{
   for _, fn := range fns{
     err := fn(gallery)
     if err != nil{
