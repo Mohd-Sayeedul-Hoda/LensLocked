@@ -8,6 +8,7 @@ import (
   "lenslocked.com/controllers"
   "lenslocked.com/views"
   "lenslocked.com/models"
+  "lenslocked.com/middleware"
   //"lenslocked.com/rand"
   //"lenslocked.com/hash"
 
@@ -47,6 +48,14 @@ func main(){
   userC := controllers.NewUser(services.User)
   galleriesC := controllers.NewGalleries(services.Gallery)
 
+  // making middleware
+  requireUserMw := middleware.RequireUser{
+    UserService: services.User,
+  }
+
+  newGallery := requireUserMw.Apply(galleriesC.New)
+  createGallery := requireUserMw.ApplyFn(galleriesC.Create)
+
   r := mux.NewRouter()
 
   r.HandleFunc("/cookietest", userC.CookieTest)
@@ -63,8 +72,8 @@ func main(){
   r.HandleFunc("/login", userC.Login).Methods("POST")
 
   // Gallery routes
-  r.HandleFunc("/galleries/new", galleriesC.New.ServeHTTP).Methods("GET")
-  r.HandleFunc("/galleries", galleriesC.Create).Methods("POST")
+  r.HandleFunc("/galleries/new", newGallery).Methods("GET")
+  r.HandleFunc("/galleries", createGallery).Methods("POST")
 
   fmt.Println("server running on port 3000...")
   http.ListenAndServe(":3000", r)
