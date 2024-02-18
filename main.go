@@ -45,16 +45,23 @@ func main(){
 
   staticC := controllers.NewStatic()
   userC := controllers.NewUser(services.User)
+  galleriesC := controllers.NewGalleries(services.Gallery)
 
   r := mux.NewRouter()
+
   r.HandleFunc("/cookietest", userC.CookieTest)
+
   r.HandleFunc("/", staticC.Home.ServeHTTP).Methods("GET")
   r.HandleFunc("/contact", staticC.Contact.ServeHTTP).Methods("GET")
   r.HandleFunc("/faq", staticC.Faq.ServeHTTP).Methods("GET")
+
   r.HandleFunc("/signup", userC.NewView.ServeHTTP).Methods("GET")
   r.HandleFunc("/signup", userC.Create).Methods("POST")
   r.HandleFunc("/login", userC.LoginView.ServeHTTP).Methods("GET")
   r.HandleFunc("/login", userC.Login).Methods("POST")
+
+  r.HandleFunc("/galleries/new", galleriesC.New.ServeHTTP).Methods("GET")
+
   http.ListenAndServe(":3000", r)
 }
 
