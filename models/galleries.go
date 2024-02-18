@@ -5,6 +5,7 @@ import "github.com/jinzhu/gorm"
 type Gallery struct{
   gorm.Model
   UserID uint `gorm:"not_null;index"`
+  Title string `gorm:"not_null"`
 }
 
 type galleryGorm struct {
@@ -29,9 +30,16 @@ type GalleryService interface {
 
 var _ GalleryDB = &galleryGorm{}
 
+type galleryValFn func(*Gallery)error
+
 func (gg *galleryGorm) Create(gallery *Gallery) error{
   return gg.db.Create(gallery).Error
 }
+
+const(
+  ErrUserIDRequired modelError = "models: user ID is required"
+  ErrTitleRequire modelError = "models: title is required"
+)
 
 func NewGalleryService(db *gorm.DB) GalleryService{
   return &galleryService{
@@ -43,3 +51,26 @@ func NewGalleryService(db *gorm.DB) GalleryService{
   }
 }
 
+func renGalleryValFns(gallery *Gallery, fns ...galleryValFn) error{
+  for _, fn := range fns{
+    err := fn(gallery)
+    if err != nil{
+      return err
+    }
+  }
+  return nil
+}
+
+func (gv *galleryValidator) userIDRequired(g *Gallery) error{
+  if g.UserID <= 0 {
+    return ErrUserIDRequired
+  }
+  return nil
+}
+
+func (gv *galleryValidator) titleRequired(g *Gallery)error{
+  if g.Title == ""{
+    return ErrTitleRequire
+  }
+  return nil
+}

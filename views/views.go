@@ -59,7 +59,7 @@ func (v *View) Render(w http.ResponseWriter, data interface{}) {
   w.Header().Set("Content-Type", "text/html")
   switch data.(type){
   case Data:
-    // do something
+    // do nothing
   default:
    data = Data{
       Yield: data,

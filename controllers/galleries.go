@@ -26,6 +26,22 @@ func NewGalleries(gs models.GalleryService) *Galleries{
 }
 
 func (g *Galleries) Create(w http.ResponseWriter, r *http.Request){
-  // TODO: Implement this
+  var vd views.Data
+  var form GalleryForm
+  err := parseForm(r, &form);
+  if err != nil{
+    vd.SetAlert(err)
+    g.New.Render(w, vd)
+  }
+  gallery := models.Gallery{
+    Title: form.Title,
+  }
+  err = g.gs.Create(&gallery)
+  if err != nil{
+    vd.SetAlert(err)
+    g.New.Render(w, vd)
+    return
+  }
+  fmt.Fprintln(w, gallery)
 }
 

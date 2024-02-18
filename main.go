@@ -51,17 +51,22 @@ func main(){
 
   r.HandleFunc("/cookietest", userC.CookieTest)
 
+  //static routes
   r.HandleFunc("/", staticC.Home.ServeHTTP).Methods("GET")
   r.HandleFunc("/contact", staticC.Contact.ServeHTTP).Methods("GET")
   r.HandleFunc("/faq", staticC.Faq.ServeHTTP).Methods("GET")
 
+  // User routes
   r.HandleFunc("/signup", userC.NewView.ServeHTTP).Methods("GET")
   r.HandleFunc("/signup", userC.Create).Methods("POST")
   r.HandleFunc("/login", userC.LoginView.ServeHTTP).Methods("GET")
   r.HandleFunc("/login", userC.Login).Methods("POST")
 
+  // Gallery routes
   r.HandleFunc("/galleries/new", galleriesC.New.ServeHTTP).Methods("GET")
+  r.HandleFunc("/galleries", galleriesC.Create).Methods("POST")
 
+  fmt.Println("server running on port 3000...")
   http.ListenAndServe(":3000", r)
 }
 
