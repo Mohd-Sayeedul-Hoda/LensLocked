@@ -74,6 +74,7 @@ func main(){
   // Gallery routes
   r.HandleFunc("/galleries/new", newGallery).Methods("GET")
   r.HandleFunc("/galleries", createGallery).Methods("POST")
+  r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET")
 
   fmt.Println("server running on port 3000...")
   http.ListenAndServe(":3000", r)

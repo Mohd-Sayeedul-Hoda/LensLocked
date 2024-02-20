@@ -27,6 +27,12 @@ func (mw *RequireUser) ApplyFn(next http.HandlerFunc) http.HandlerFunc{
     }
 
     // using context for rembering user think so
+    ctx := r.Context()
+    ctx = context.WithUser(ctx, user)
+
+    r = r.WithContext(ctx)
+
+    fmt.Println()
     fmt.Println("User Found: ", user)
     next(w, r)
   })
