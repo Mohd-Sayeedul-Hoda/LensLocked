@@ -1,20 +1,26 @@
 package controllers
 
 import (
-	"fmt"
-	"net/http"
-	"strconv"
+  "net/http"
+  "strconv"
 
-	"github.com/gorilla/mux"
-	"lenslocked.com/context"
-	"lenslocked.com/models"
-	"lenslocked.com/views"
+  "lenslocked.com/context"
+  "lenslocked.com/models"
+  "lenslocked.com/views"
+
+
+  "github.com/gorilla/mux"
 )
+
+const(
+  ShowGallery = "show_gallery"
+  )
 
 type Galleries struct {
   New *views.View
   ShowView *views.View
   gs models.GalleryService
+  r *mux.Router
 }
 
 
@@ -22,11 +28,12 @@ type GalleryForm struct{
   Title string `schema:"title"`
 }
 
-func NewGalleries(gs models.GalleryService) *Galleries{
+func NewGalleries(gs models.GalleryService, r *mux.Router) *Galleries{
   return &Galleries{
     New: views.NewView("bootstrap", "galleries/new"),
     ShowView: views.NewView("bootstrap", "galleries/show"),
     gs: gs,
+    r: r,
   }
 }
 
@@ -52,7 +59,16 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request){
     g.New.Render(w, vd)
     return
   }
-  fmt.Fprintln(w, gallery)
+  url, err := g.r.Get(ShowGallery).URL("id", strconv.Itoa(int(gallery.ID)))
+
+  if err != nil{
+    http.Redirect(w, r, "/", http.StatusFound)
+    return 
+  }
+
+  _ = url
+
+  http.Redirect(w, r, url.Path, http.StatusFound)
 }
 
 func (g *Galleries) Show(w http.ResponseWriter, r *http.Request){

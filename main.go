@@ -44,9 +44,11 @@ func main(){
   defer services.Close()
   services.AutoMigrate()
 
+  r := mux.NewRouter()
+
   staticC := controllers.NewStatic()
   userC := controllers.NewUser(services.User)
-  galleriesC := controllers.NewGalleries(services.Gallery)
+  galleriesC := controllers.NewGalleries(services.Gallery, r)
 
   // making middleware
   requireUserMw := middleware.RequireUser{
@@ -56,7 +58,6 @@ func main(){
   newGallery := requireUserMw.Apply(galleriesC.New)
   createGallery := requireUserMw.ApplyFn(galleriesC.Create)
 
-  r := mux.NewRouter()
 
   r.HandleFunc("/cookietest", userC.CookieTest)
 
@@ -74,7 +75,7 @@ func main(){
   // Gallery routes
   r.HandleFunc("/galleries/new", newGallery).Methods("GET")
   r.HandleFunc("/galleries", createGallery).Methods("POST")
-  r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET")
+  r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Name(controllers.ShowGallery)
 
   fmt.Println("server running on port 3000...")
   http.ListenAndServe(":3000", r)
