@@ -5,6 +5,7 @@ import (
   "net/http"
 
   "lenslocked.com/models"
+  "lenslocked.com/context"
 )
 
 type RequireUser struct{
@@ -24,6 +25,8 @@ func (mw *RequireUser) ApplyFn(next http.HandlerFunc) http.HandlerFunc{
       http.Redirect(w, r, "/login", http.StatusFound)
       return
     }
+
+    // using context for rembering user think so
     fmt.Println("User Found: ", user)
     next(w, r)
   })
