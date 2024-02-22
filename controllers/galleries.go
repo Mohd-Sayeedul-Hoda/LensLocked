@@ -19,6 +19,7 @@ const(
 type Galleries struct {
   New *views.View
   ShowView *views.View
+  EditView *views.View
   gs models.GalleryService
   r *mux.Router
 }
@@ -32,6 +33,7 @@ func NewGalleries(gs models.GalleryService, r *mux.Router) *Galleries{
   return &Galleries{
     New: views.NewView("bootstrap", "galleries/new"),
     ShowView: views.NewView("bootstrap", "galleries/show"),
+    EditView: views.NewView("bootstrap", "galleries/edit"),
     gs: gs,
     r: r,
   }
@@ -70,22 +72,35 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request){
 }
 
 func (g *Galleries) Show(w http.ResponseWriter, r *http.Request){
-  vars := mux.Vars(r)
-  idStr := vars["id"]
 
-  id, err := strconv.Atoi(idStr)
+  gallery, err := g.galleryByID(w, r)
   if err != nil{
-    http.Error(w, "Invalid gallery ID", http.StatusNotFound)
-    return
-  }
-
-  _ = id
-
-  gallery := models.Gallery{
-    Title: "A temporary fake gallery with ID: "+ idStr, 
+    return 
   }
 
   var vd views.Data
   vd.Yield = gallery
   g.ShowView.Render(w, vd)
+}
+
+func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request)(*models.Gallery, error){
+  vars := mux.Vars(r)
+  idStr := vars["id"]
+  id, err := strconv.Atoi(idStr)
+  if err != nil{
+    http.Error(w, "Invalid Gallery ID", http.StatusNotFound)
+    return nil, err
+  }
+  gallery, err := g.gs.ByID(uint(id))
+  if err != nil{
+    switch err{
+    case models.ErrNotFound:
+      http.Error(w, "Gallery not found", http.StatusNotFound)
+    default:
+      http.Error(w, "Whoops! Something went wrong", http.StatusInternalServerError)
+
+  }
+    return nil, err
+  }
+  return gallery, nil
 }
