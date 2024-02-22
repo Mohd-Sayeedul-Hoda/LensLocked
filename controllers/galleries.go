@@ -66,8 +66,6 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request){
     return 
   }
 
-  _ = url
-
   http.Redirect(w, r, url.Path, http.StatusFound)
 }
 

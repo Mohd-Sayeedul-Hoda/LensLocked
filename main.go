@@ -62,14 +62,14 @@ func main(){
   r.HandleFunc("/cookietest", userC.CookieTest)
 
   //static routes
-  r.HandleFunc("/", staticC.Home.ServeHTTP).Methods("GET")
-  r.HandleFunc("/contact", staticC.Contact.ServeHTTP).Methods("GET")
-  r.HandleFunc("/faq", staticC.Faq.ServeHTTP).Methods("GET")
+  r.Handle("/", staticC.Home).Methods("GET")
+  r.Handle("/contact", staticC.Contact).Methods("GET")
+  r.Handle("/faq", staticC.Faq).Methods("GET")
 
   // User routes
-  r.HandleFunc("/signup", userC.NewView.ServeHTTP).Methods("GET")
+  r.Handle("/signup", userC.NewView).Methods("GET")
   r.HandleFunc("/signup", userC.Create).Methods("POST")
-  r.HandleFunc("/login", userC.LoginView.ServeHTTP).Methods("GET")
+  r.Handle("/login", userC.LoginView).Methods("GET")
   r.HandleFunc("/login", userC.Login).Methods("POST")
 
   // Gallery routes
