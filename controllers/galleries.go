@@ -1,7 +1,6 @@
 package controllers
 
 import (
-  "fmt"
   "net/http"
   "strconv"
 
@@ -14,6 +13,8 @@ import (
 
 const(
   ShowGallery = "show_gallery"
+  IndexGallery = "index_gallery"
+  EditGallery = "edit_gallery"
   )
 
 type Galleries struct {
@@ -63,7 +64,7 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request){
     g.New.Render(w, vd)
     return
   }
-  url, err := g.r.Get(ShowGallery).URL("id", strconv.Itoa(int(gallery.ID)))
+  url, err := g.r.Get(EditGallery).URL("id", strconv.Itoa(int(gallery.ID)))
 
   if err != nil{
     http.Redirect(w, r, "/", http.StatusFound)
@@ -182,7 +183,12 @@ func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request){
     return
   }
 
-  fmt.Fprint(w, "successfully deteted!")
+  url, err := g.r.Get(IndexGallery).URL()
+  if err != nil{
+    http.Redirect(w, r , "/", http.StatusNotFound)
+    return 
+  }
+  http.Redirect(w, r, url.Path, http.StatusFound)
 }
 
 func (g *Galleries) Index(w http.ResponseWriter, r *http.Request){
