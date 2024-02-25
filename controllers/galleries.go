@@ -202,3 +202,15 @@ func (g *Galleries) Index(w http.ResponseWriter, r *http.Request){
   vd.Yield = galleries
   g.IndexView.Render(w, r, vd)
 }
+
+func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request){
+  gallery, err := g.galleryByID(w, r)
+  if err != nil{
+    return 
+  }
+  user := context.User(r.Context())
+  if gallery.UserID != user.ID{
+    http.Error(w, "gallery not found", http.StatusNotFound)
+    return
+  }
+}
