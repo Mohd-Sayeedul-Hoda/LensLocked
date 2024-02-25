@@ -14,15 +14,15 @@
 				<li class="nav-item">
 					<a class="nav-link" href="/contact">Contact</a>
 				</li>
+				{{if .User}}
+					<li class="nav-item"><a href="/galleries" class="nav-link">Galleries</a></li>
+				{{end}}
 				<li class="nav-item">
 					<a href="/signup" class="nav-link">Signup</a>
 				</li>
 				<li class="nav-item">
 					<a href="/login" class="nav-link">Login</a>
 				</li>
-				{{if .User}}
-				<li><a href="/galleries">Galleries</a></li>
-				{{end}}
 			</ul>
 		</div>
 	</div>

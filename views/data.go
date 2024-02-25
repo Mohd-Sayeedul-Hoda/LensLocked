@@ -1,9 +1,14 @@
 package views
 
-import "log"
+import (
+	"log"
+
+	"lenslocked.com/models"
+)
 
 type Data struct{
   Alert *Alert
+  User *models.User
   Yield interface{}
 }
 

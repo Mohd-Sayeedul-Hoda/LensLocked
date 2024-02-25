@@ -51,9 +51,10 @@ func main(){
   galleriesC := controllers.NewGalleries(services.Gallery, r)
 
   // making middleware
-  requireUserMw := middleware.RequireUser{
+  userMw := middleware.User{
     UserService: services.User,
   }
+  requireUserMw := middleware.RequireUser{}
 
   newGallery := requireUserMw.Apply(galleriesC.New)
   createGallery := requireUserMw.ApplyFn(galleriesC.Create)
@@ -84,7 +85,7 @@ func main(){
     Name(controllers.IndexGallery)
 
   fmt.Println("server running on port 3000...")
-  http.ListenAndServe(":3000", r)
+  http.ListenAndServe(":3000", userMw.Apply(r))
 }
 
 func must(err error){

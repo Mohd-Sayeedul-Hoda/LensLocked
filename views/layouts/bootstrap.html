@@ -9,7 +9,7 @@
 	</head>
 	
 	<body>
-		{{template "navbar"}}
+		{{template "navbar" .}}
 		<div class="container-fluid mt-4">
 			{{if .Alert}}
 			    {{template "alert" .Alert}}

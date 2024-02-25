@@ -46,7 +46,7 @@ func(u *Users) Create(w http.ResponseWriter, r *http.Request){
       Level: views.AlertLvlError,
       Message: views.AlertMsgGeneric,
     }
-    u.NewView.Render(w, vd)
+    u.NewView.Render(w, r, vd)
   }
   user := models.User{
     Name: form.Name,
@@ -56,7 +56,7 @@ func(u *Users) Create(w http.ResponseWriter, r *http.Request){
   err := u.us.Create(&user)
   if err != nil{
     vd.SetAlert(err)
-    u.NewView.Render(w, vd)
+    u.NewView.Render(w, r, vd)
     return
   }
 
@@ -74,7 +74,7 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request){
   err := parseForm(r, &form)
   if err != nil{
     vd.SetAlert(err)
-    u.LoginView.Render(w, vd)
+    u.LoginView.Render(w, r, vd)
   }
   user, err := u.us.Authenticate(form.Email, form.Password)
   if err != nil{
@@ -84,13 +84,13 @@ func (u *Users) Login(w http.ResponseWriter, r *http.Request){
   default:
     vd.SetAlert(err)
   }
-    u.LoginView.Render(w, vd)
+    u.LoginView.Render(w, r, vd)
     return 
   }
   err = u.signIn(w, user)
   if err != nil{
     vd.SetAlert(err)
-    u.LoginView.Render(w, vd)
+    u.LoginView.Render(w, r, vd)
     return
   }
   http.Redirect(w, r, "/galleries", http.StatusFound)
