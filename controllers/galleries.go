@@ -1,20 +1,24 @@
 package controllers
 
 import (
-  "net/http"
-  "strconv"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
 
-  "lenslocked.com/context"
-  "lenslocked.com/models"
-  "lenslocked.com/views"
+	"lenslocked.com/context"
+	"lenslocked.com/models"
+	"lenslocked.com/views"
 
-  "github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 )
 
 const(
   ShowGallery = "show_gallery"
   IndexGallery = "index_gallery"
   EditGallery = "edit_gallery"
+  maxMultipartMem = 1 << 20
   )
 
 type Galleries struct {
@@ -25,7 +29,6 @@ type Galleries struct {
   gs models.GalleryService
   r *mux.Router
 }
-
 
 type GalleryForm struct{
   Title string `schema:"title"`
@@ -213,4 +216,47 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request){
     http.Error(w, "gallery not found", http.StatusNotFound)
     return
   }
+
+  var vd views.Data
+  vd.Yield = gallery
+  err = r.ParseMultipartForm(maxMultipartMem)
+  if err != nil{
+    vd.SetAlert(err)
+    g.EditView.Render(w, r, vd)
+    return
+  }
+  galleryPath := filepath.Join("images", "galleries")
+  err = os.MkdirAll(galleryPath, 0755)
+  if err != nil{
+    vd.SetAlert(err)
+    g.EditView.Render(w, r, vd)
+    return
+  }
+  files := r.MultipartForm.File["images"]
+  for _, f := range files{
+    file, err := f.Open()
+    if err != nil{
+      vd.SetAlert(err)
+      g.EditView.Render(w, r, vd)
+      return
+    }
+
+    dst, err := os.Create(filepath.Join(galleryPath, f.Filename))
+    defer file.Close()
+    if err != nil{
+      vd.SetAlert(err)
+      g.EditView.Render(w, r, vd)
+    }
+    defer dst.Close()
+    _, err = io.Copy(dst, file)
+    if err != nil{
+      vd.SetAlert(err)
+      g.EditView.Render(w, r, vd)
+    }
+  }
+  vd.Alert = &views.Alert{
+    Level: views.AlertLvlSuccess,
+    Message: "Image successfully upload",
+  }
+  g.EditView.Render(w, r, vd)
 }
