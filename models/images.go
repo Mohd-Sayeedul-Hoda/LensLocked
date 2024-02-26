@@ -9,14 +9,14 @@ import(
 
 type ImageService interface{
   Create(galleryID uint, r io.Reader, filename string) error
+  ByGalleryID(galleryID uint) ([]string, error)
 }
 
-type imageService struct{
-
-}
+type imageService struct{}
 
 func NewImageService() ImageService{
-  return &ImageService{}
+  return &imageService{
+  }
 }
 
 func (is *imageService) Create(galleryID uint, r io.Reader, fileName string)error{
@@ -43,4 +43,17 @@ func (is *imageService) mkImagePath(galleryID uint) (string, error){
     return "", err
   }
   return galleryPath, nil
+}
+
+func (is *imageService) ByGalleryID(galleryID uint) ([]string, error){
+  path := is.imagePath(galleryID)
+  strings, err := filepath.Glob(filepath.Join(path, "*"))
+  if err != nil{
+    return nil, err
+  }
+  return strings, nil
+}
+
+func (is *imageService) imagePath(galleryID uint) string{
+  return filepath.Join("images", "galleries", fmt.Sprintf("%v", galleryID))
 }
