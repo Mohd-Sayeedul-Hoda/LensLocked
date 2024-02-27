@@ -8,7 +8,7 @@ type Gallery struct{
   gorm.Model
   UserID uint `gorm:"not_null;index"`
   Title string `gorm:"not_null"`
-  Images []string `gorm:"-"`
+  Images []Image `gorm:"-"`
 }
 
 type galleryGorm struct {
@@ -146,11 +146,11 @@ func (gv *galleryValidator) nonZeroID(gallery *Gallery)error{
   return nil
 }
 
-func (g *Gallery) ImageSplitN(n int) [][]string{
-  ret := make([][]string, n)
+func (g *Gallery) ImagesSplitN(n int) [][]Image{
+  ret := make([][]Image, n)
 
   for i := 0; i < n; i++ {
-    ret[i] = make([]string, 0)
+    ret[i] = make([]Image, 0)
   }
 
   for i, img := range g.Images{

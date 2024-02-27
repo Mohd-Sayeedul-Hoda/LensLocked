@@ -1,14 +1,15 @@
 package controllers
 
 import (
-  "net/http"
-  "strconv"
+	"fmt"
+	"net/http"
+	"strconv"
 
-  "lenslocked.com/context"
-  "lenslocked.com/models"
-  "lenslocked.com/views"
+	"lenslocked.com/context"
+	"lenslocked.com/models"
+	"lenslocked.com/views"
 
-  "github.com/gorilla/mux"
+	"github.com/gorilla/mux"
 )
 
 const(
@@ -250,4 +251,36 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request){
     Message: "Image successfully upload",
   }
   g.EditView.Render(w, r, vd)
+}
+
+func (g *Galleries) ImageDelete(w http.ResponseWriter, r *http.Request){
+  gallery, err := g.galleryByID(w, r)
+  if err != nil{
+    return 
+  }
+  user := context.User(r.Context())
+  if gallery.UserID != user.ID{
+    http.Error(w, "you don't have permission to edit"+"this gallery or image", http.StatusForbidden)
+    return
+  }
+
+  filename := mux.Vars(r)["filename"]
+  i := models.Image{
+    Filename: filename,
+    GalleryID: gallery.ID,
+  }
+  err = g.is.Delete(&i)
+  if err != nil{
+    var vd views.Data
+    vd.Yield = gallery
+    vd.SetAlert(err)
+    g.EditView.Render(w, r, vd)
+    return
+  }
+  url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
+  if err != nil{
+    http.Redirect(w, r, "/galleries", http.StatusFound)
+    return 
+  }
+  http.Redirect(w, r, url.Path, http.StatusFound)
 }
