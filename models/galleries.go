@@ -145,3 +145,17 @@ func (gv *galleryValidator) nonZeroID(gallery *Gallery)error{
   }
   return nil
 }
+
+func (g *Gallery) ImageSplitN(n int) [][]string{
+  ret := make([][]string, n)
+
+  for i := 0; i < n; i++ {
+    ret[i] = make([]string, 0)
+  }
+
+  for i, img := range g.Images{
+    bucket := i % n
+    ret[bucket] = append(ret[bucket], img)
+  }
+  return ret
+}

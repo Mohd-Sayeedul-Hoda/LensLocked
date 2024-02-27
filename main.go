@@ -58,8 +58,7 @@ func main(){
 
   newGallery := requireUserMw.Apply(galleriesC.New)
   createGallery := requireUserMw.ApplyFn(galleriesC.Create)
-
-
+  
   r.HandleFunc("/cookietest", userC.CookieTest)
 
   //static routes
@@ -85,7 +84,11 @@ func main(){
     Name(controllers.IndexGallery)
   r.HandleFunc("/galleries/{id:[0-9]+}/images", requireUserMw.ApplyFn(galleriesC.ImageUpload))
 
-fmt.Println("server running on port 3000...")
+  // Image routes
+  imageHandler := http.FileServer(http.Dir("./images/"))
+  r.PathPrefix("/images/").Handler(http.StripPrefix("/images/", imageHandler))
+
+  fmt.Println("server running on port 3000...")
   http.ListenAndServe(":3000", userMw.Apply(r))
 }
 
